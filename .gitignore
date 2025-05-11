@@ -1,0 +1,222 @@
+# -------------------------
+# OS-SPECIFIC
+# -------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# -------------------------
+# EDITORS & IDEs
+# -------------------------
+.vscode/
+*.code-workspace
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# -------------------------
+# NEOVIM / VIM / KATE
+# -------------------------
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*~
+.kate-swp
+.netrwhist
+nvim.log
+site/pack/**/start/*
+site/pack/**/opt/*
+luacache/
+packer_compiled.lua
+shada/
+undo/
+swap/
+spell/*.add
+spell/*.spl
+
+# -------------------------
+# SHELL HISTORY / SESSION
+# -------------------------
+.zsh_history
+.zsh_sessions
+.zcompdump*
+.zshrc.pre-oh-my-zsh
+.zshrc.backup
+.zshrc.old
+.bash_history
+.bash_logout
+.bash_profile
+.bashrc
+.shell.pre-oh-my-zsh
+.profile
+
+# -------------------------
+# DOTFILES BOOTSTRAP OUTPUT
+# -------------------------
+*.log
+*.install.log
+*.pid
+*.lock
+*.bak
+*.orig
+logs/
+installed_tools.json
+version-check-results.json
+audit.log
+registry.cache
+.env
+.env.*
+
+# -------------------------
+# PACKAGE MANAGERS & BUILD ARTIFACTS
+# -------------------------
+__pycache__/
+*.py[cod]
+poetry.lock
+Pipfile.lock
+dist/
+build/
+*.egg-info/
+node_modules/
+*.tsbuildinfo
+.vite/
+.next/
+out/
+coverage/
+public/
+.cache/
+*.class
+*.o
+*.out
+*.so
+*.exe
+
+# -------------------------
+# CONTAINERIZATION
+# -------------------------
+*.tar
+*.tar.gz
+*.img
+*.qcow2
+*.qcow
+*.iso
+*.oci
+*.ova
+
+# -------------------------
+# GIT & SYSTEM JUNK
+# -------------------------
+*~
+*.old
+*.tmp
+*.sw?
+*.rej
+*.orig
+*.save
+*#
+
+# -------------------------
+# SECURITY / KEYS / CREDENTIALS
+# -------------------------
+*.pem
+*.crt
+*.key
+*.p12
+*.asc
+*.enc
+*.csr
+secrets.env
+auth.json
+token.*
+vault-pass
+*.kdbx
+
+# -------------------------
+# APP / STACK-SPECIFIC
+# -------------------------
+
+# JetBrains
+.idea/
+*.ipr
+
+# Docker/Podman
+.docker/
+podman-compose.yaml
+podman-compose.override.yaml
+
+# Kubernetes / Kind
+.kube/
+kind-config.yaml
+
+# VS Code logs
+vscode-*.log*
+.vscode-insiders/
+
+# Redis / Postgres temp
+*.rdb
+*.aof
+*.pid
+*.sock
+*.db
+*.pgsql
+
+# Weaviate
+weaviate-data/
+weaviate-logs/
+
+# BentoML
+bentoml/bentos/*
+bentoml/models/*
+bentoml/tmp/*
+
+# LangSmith or LangChain
+.langsmith/
+.langchain/
+
+# Terraform
+.terraform/
+*.tfstate*
+crash.log
+
+# MkDocs
+site/
+*.mkdocs.yml.lock
+
+# Storybook
+storybook-static/
+.cache/storybook/
+
+# Tauri / Rust
+src-tauri/target/
+target/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+web-build/
+*.apk
+*.aab
+
+# Sentry, OpenTelemetry, etc.
+sentry.log
+otel-traces/
+otel-logs/
+
+# -------------------------
+# OPTIONAL: BACKUPS & TEMP
+# -------------------------
+*.backup
+*.bak
+*.old
+*.tmp
+*.temp
+*.sw?
+*.log.*
+*.gz
+*.tar
+
