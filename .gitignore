@@ -62,7 +62,6 @@ spell/*.spl
 *.install.log
 *.pid
 *.lock
-*.bak
 *.orig
 logs/
 installed_tools.json
@@ -111,12 +110,9 @@ public/
 # -------------------------
 # GIT & SYSTEM JUNK
 # -------------------------
-*~
 *.old
-*.tmp
 *.sw?
 *.rej
-*.orig
 *.save
 *#
 
@@ -139,11 +135,6 @@ vault-pass
 # -------------------------
 # APP / STACK-SPECIFIC
 # -------------------------
-
-# JetBrains
-.idea/
-*.ipr
-
 # Docker/Podman
 .docker/
 podman-compose.yaml
@@ -160,7 +151,6 @@ vscode-*.log*
 # Redis / Postgres temp
 *.rdb
 *.aof
-*.pid
 *.sock
 *.db
 *.pgsql
@@ -211,12 +201,7 @@ otel-logs/
 # OPTIONAL: BACKUPS & TEMP
 # -------------------------
 *.backup
-*.bak
-*.old
-*.tmp
 *.temp
-*.sw?
 *.log.*
 *.gz
-*.tar
 
