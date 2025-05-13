@@ -15,7 +15,7 @@ It provides moderation tools, VERY basic code assistance, automated maybe manual
 - **Role Control**: Assign advertising roles (e.g. dev, content creator, game server owner)
 - **Pluggable Design**: Easy to extend with new cogs or backend logic
 - **SQLite Backend**: Lightweight DB with upgrade path to PostgreSQL
-- **Structured Logging**: Built with [loguru](https://github.com/Delgan/loguru) for beautiful logs
+- **Structured Logging**: Built with [loguru](https://github.com/Delgan/loguru)
 
 ---
 
