@@ -1,12 +1,10 @@
-# GitHub/GitLab API helpers
-import os
+# GitHub & GitLab polling utils
 
 
-async def get_latest_commit(repo_url, token):
-    # Placeholder for GitHub/GitLab API call to fetch commits
+# Placeholder functions to fetch commits
+async def get_latest_commits(repo_url, token):
     return []
 
 
 async def get_repo_metadata(repo_url, token):
-    # Placeholder function to fetch repo metadata
-    return []
+    return {}

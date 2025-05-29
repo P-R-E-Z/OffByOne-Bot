@@ -1,0 +1,20 @@
+# Loads env variables from .env file
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Discord bot token
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN not found in .env file.")
+
+# SQLite DB path
+DB_PATH = os.getenv("DB_PATH", "data/bot.db")
+if not DB_PATH:
+    raise ValueError("DB_PATH not found in .env file.")
+
+# GitHub API token
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+if not GITHUB_TOKEN:
+    raise ValueError("GITHUB_TOKEN not found in .env file.")

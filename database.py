@@ -1,16 +1,17 @@
-# Database connection
-import os
+# Inits SQLite database using aiosqlite & schema constants
 import aiosqlite
 from loguru import logger
-from schemas import models
+from weaviate.connect.executor import execute
 
-DB_PATH = "data/bot.db"
+from config import DB_PATH
+from schema import models
 
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(models.CREATE_USERS_TABLE)
-        await db.execute(models.CREATE_APPLICATIONS_TABLE)
-        await db.execute(models.CREATE_APPROVED_ROLES_TABLE)
-        await db.execute(models.CREATE_PENDING_APPS_TABLE)
-        await db.execute(models.CREATE_ROLES_TABLE)
+        awaitdb.execute(models.CREATE_APPLICATIONS_TABLE)
+        awaitdb.execute(models.CREATE_APPROVED_ROLES_TABLE)
+        awaitdb.execute(models.CREATE_REPO_HOOKS_TABLE)
+        awaitdb.execute(models.CREATE_CHANNEL_HOOKS_TABLE)
+        awaitdb.execute(models.CREATE_TOGGLES_TABLE)
+        logger.info("Database initialized.")

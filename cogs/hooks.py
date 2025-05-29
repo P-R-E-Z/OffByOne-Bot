@@ -1,15 +1,16 @@
-# Hook repo, Discord channel, and social links
-import discord
-import discord.ext.commands
+# Command interface for linking user channels, repos, socials to update targets
+from discord.ext import commands
+from pyanaconda.modules.storage.devicetree.fsset import copy_to_system
 
 
 class Hooks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="hook")
-    async def hook_command(self, ctx):
-        await ctx.send("Hook repo WIP")
+
+@commands.command(name="Hook")
+async def _hook(self, ctx):
+    await ctx.send("Hooking not working yet womp womp")
 
 
 async def setup(bot):
