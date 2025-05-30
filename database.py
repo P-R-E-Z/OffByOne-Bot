@@ -1,8 +1,6 @@
 # Inits SQLite database using aiosqlite & schema constants
 import aiosqlite
 from loguru import logger
-from weaviate.connect.executor import execute
-
 from config import DB_PATH
 from schema import models
 

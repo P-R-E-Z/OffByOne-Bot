@@ -2,6 +2,14 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from discord import Interaction
+
+print("Using Interaction from:", Interaction.__module__)
+
+
+@app_commands.command(name="test")
+async def test_cmd(self, interaction: Interaction):
+    await interaction.response.send_message("Test command executed.")
 
 
 class Applications(commands.Cog):
@@ -13,7 +21,7 @@ class Applications(commands.Cog):
     name="apply", description="Start application for advertising access"
 )
 @app_commands.describe(role_type="Role you're applying for")
-async def apply(self, interaction: discord.Interaction, role_type: str):
+async def apply(self, interaction: Interaction, role_type: str):
     await interaction.response.send_message(
         f"Thanks for applying for {role_type}. Check your DMs for the application.",
         ephemeral=True,

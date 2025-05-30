@@ -1,15 +1,19 @@
 # Main entry point for the bot
 import discord
 from discord.ext import commands
-from discord.ext.commands import bot
 from config import BOT_TOKEN
 from loguru import logger
 import asyncio
+import os
 
-from database import init_db
+# Guild sync for slash commands
+DEV_GUILD_ID = int(os.getenv("DEV_GUILD_ID"))
+ENV = os.getenv("ENV", "dev")  # default global
+
+# from database import init_db
 
 intents = discord.Intents.all()
-Bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Core command modules
 CORE_COGS = ["moderation", "roles", "toggles", "applications"]
@@ -17,12 +21,25 @@ CORE_COGS = ["moderation", "roles", "toggles", "applications"]
 # Feature command modules
 FEATURE_COGS = ["hooks", "updater", "memes", "coding_help", "crossposter"]
 
+TASK_COGS = ["tasks.poll_repos", "tasks.poll_channels", "tasks.notify_pending_apps"]
+
 ALL_COGS = CORE_COGS + FEATURE_COGS + TASK_COGS
 
 
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
+    try:
+        if ENV == "prod":
+            synced = await bot.tree.sync()
+            logger.success(f"Synced {len(synced)} slash commands globally")
+        else:
+            synced = await bot.tree.sync(guild=discord.Object(id=DEV_GUILD_ID))
+            logger.success(
+                f"Synced {len(synced)} slash commands to guild {DEV_GUILD_ID}"
+            )
+    except Exception as e:
+        logger.error(f"Failed to sync slash commands: {e}")
 
 
 async def load_cogs():
@@ -36,7 +53,7 @@ async def load_cogs():
 
 
 async def main():
-    await init_db()
+    #   await init_db()
     await load_cogs()
     await bot.start(BOT_TOKEN)
 
