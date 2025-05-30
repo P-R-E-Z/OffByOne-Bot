@@ -2,19 +2,21 @@
 name = "offbyone"
 version = "0.2.0"
 description = "Prez Discord Bot"
-authors = [
-    {name = "Prez",email = "154857421+P-R-E-Z@users.noreply.github.com"}
-]
-license = {text = "MIT"}
+authors = ["Prez <154857421+P-R-E-Z@users.noreply.github.com>"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">3.11"
-package-mode = false
+packages = [
+    { include = "cogs" },
+    { include = "tasks" },
+    { include = "utils" }
+]
 
-[too.poetry.dependencies]
-python-dotenv = ">=1.1.0,<2.0.0)"
-loguru = ">=0.7.3,<0.8.0)"
-aiosqlite = ">=0.21.0,<0.22.0)"
-discord-py = ">=2.3.2,<3.0.0)"
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+python-dotenv = ">=1.1.0,<2.0.0"
+loguru = ">=0.7.3,<0.8.0"
+aiosqlite = ">=0.21.0,<0.22.0"
+discord-py = ">=2.3.2,<3.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
