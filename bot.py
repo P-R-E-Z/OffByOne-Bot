@@ -8,6 +8,7 @@ import os
 import glob
 import signal
 import sys
+from database import init_db
 
 
 def discover_cogs_from_directory(directory_path: str, module_prefix: str) -> list[str]:
@@ -97,23 +98,34 @@ async def on_ready():
     # List guild for debugging
     for guild in bot.guilds:
         logger.info(f"{guild.name} (id: {guild.id})")
-    try:
-        if ENV == "prod":
+
+    # Debug: Check what commands are in the tree before syncing
+    logger.info(f"Commands in tree before sync: {len(bot.tree.get_commands())}")
+    for cmd in bot.tree.get_commands():
+        logger.info(f"  - {cmd.name}: {cmd.description}")
+
+    if ENV == "dev" and DEV_GUILD_ID:
+        try:
+            guild = discord.Object(id=DEV_GUILD_ID)
+            # Copy global commands to the dev guild for instant updates
+            bot.tree.copy_global_to(guild=guild)
+            synced = await bot.tree.sync(guild=guild)
+            logger.success(
+                f"Synced {len(synced)} slash commands to dev guild {DEV_GUILD_ID}"
+            )
+
+            # Debug: List what was actually synced
+            for cmd in synced:
+                logger.info(f"  Synced: {cmd.name}")
+
+        except Exception as e:
+            logger.error(f"Failed to sync commands to dev guild: {e}")
+    else:
+        try:
             synced = await bot.tree.sync()
             logger.success(f"Synced {len(synced)} slash commands globally")
-        elif DEV_GUILD_ID == 0:
-            logger.warning(
-                "DEV_GUILD_ID not set for 'dev' env, falling back to global sync"
-            )
-            synced = await bot.tree.sync()
-            logger.success(f"Synced {len(synced)} slash commands globally (fallback)")
-        else:
-            synced = await bot.tree.sync(guild=discord.Object(id=DEV_GUILD_ID))
-            logger.success(
-                f"Synced {len(synced)} slash commands to guild {DEV_GUILD_ID}"
-            )
-    except Exception as e:
-        logger.error(f"Failed to sync slash commands: {e}")
+        except Exception as e:
+            logger.error(f"Failed to sync commands globally: {e}")
 
 
 # Manual sync command for testing
@@ -182,7 +194,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 
 async def main():
-    #   await init_db()
+    await init_db()
     await load_cogs()
     await bot.start(BOT_TOKEN)
 

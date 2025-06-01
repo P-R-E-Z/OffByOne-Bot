@@ -2,8 +2,6 @@
 from dotenv import load_dotenv
 import os
 
-from bot import DEV_GUILD_ID
-
 load_dotenv()
 
 # Discord bot token

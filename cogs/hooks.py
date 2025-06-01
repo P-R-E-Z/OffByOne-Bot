@@ -1,6 +1,5 @@
 # Command interface for linking user channels, repos, socials to update targets
 from discord.ext import commands
-from pyanaconda.modules.storage.devicetree.fsset import copy_to_system
 
 
 class Hooks(commands.Cog):

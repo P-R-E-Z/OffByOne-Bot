@@ -1,12 +1,9 @@
 # Sends random meme images from assets/memes
 from ctypes import memset
-
 import discord
 import os
 from discord.ext import commands
 import random
-
-from sepolicy.templates.var_cache import if_rules
 
 
 class Memes(commands.Cog):

@@ -49,3 +49,12 @@ CREATE TABLE IF NOT EXISTS user_toggles (
     PRIMARY KEY (user_id, feature)
 );
 """
+
+CREATE_SERVER_CONFIGS_TABLE = """
+CREATE TABLE IF NOT EXISTS server_configs (
+    guild_id INTEGER PRIMARY KEY,
+    application_channel_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""

@@ -1,11 +1,7 @@
 # Crossposts message to the specified channel using a webhook
 from collections import namedtuple
-
 import discord
-from ansible_collections.amazon.aws.plugins.modules.ec2_instance import await_instances
 from discord.ext import commands
-from huggingface_hub import webhook_endpoint
-from mutagen.easyid3 import original_date_delete
 
 
 class CrossPoster(commands.Cog):
