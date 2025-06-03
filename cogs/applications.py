@@ -2,7 +2,7 @@ import json
 import logging
 import time
 import asyncio
-from typing import Set
+from typing import Set, Dict, Optional
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 import aiosqlite
@@ -23,13 +23,40 @@ class ApplicationError(Exception):
 
 
 class ApplicationSession:
-    def __init__(self, user_id: int, role_type: str, questions: list):
+    def __init__(self, user_id: int, role_type: str, questions: list, guild_id: int):
         self.user_id = user_id
         self.role_type = role_type
         self.questions = questions
         self.current_question = 0
         self.answers = {}
         self.created_at = time.time()
+        self.is_cancelled = False
+        self.is_completed = False
+        self.guild_id = guild_id
+
+    def add_answer(self, answer: str):
+        """Add an answer to the current question."""
+        question_key = f"question_{self.current_question + 1}"
+        self.answers[question_key] = answer
+        self.current_question += 1
+
+    def get_current_question(self) -> str:
+        """Get the current question text."""
+        if self.current_question < len(self.questions):
+            return self.questions[self.current_question]
+        return None
+
+    def is_finished(self) -> bool:
+        """Check if the application is finished."""
+        return self.current_question >= len(self.questions)
+
+    def cancel(self):
+        """Cancel the application."""
+        self.is_cancelled = True
+
+    def complete(self):
+        """Mark the application as completed."""
+        self.is_completed = True
 
 
 async def _check_user_permissions(user: discord.Member) -> bool:
@@ -43,6 +70,7 @@ class Applications(commands.Cog):
         self.bot = bot
         self.pending_applications_users: Set[int] = set()
         self.application_attempts = defaultdict(list)  # Track attempts per user
+        self.active_sessions: Dict[int, ApplicationSession] = {}
         self.role_configs = {
             "game_server_owner": {
                 "name": "Game Server Owner",
@@ -93,10 +121,32 @@ class Applications(commands.Cog):
         user_attempts.append(now)
         return True
 
-    async def _start_application_questions(self, user: discord.User, role_type: str):
+    async def _get_application_channel(
+        self, guild_id: int
+    ) -> Optional[discord.TextChannel]:
+        """Get the application channel for the given guild."""
+        try:
+            async with aiosqlite.connect(DB_PATH) as db:
+                async with db.execute(
+                                "SELECT channel_id FROM application_channels WHERE guild_id = ?",
+                                (guild_id,),
+                            ) as cursor:
+                    row = await cursor.fetchone()
+                    if row:
+                        return self.bot.get_channel(row[0])
+        except Exception as e:
+            logger.error(f"Error getting application channel for guild {guild_id}: {e}")
+        return None
+
+    async def _start_application_questions(
+        self, user: discord.User, role_type: str, guild_id: int
+    ):
         """Start the interactive question flow via DM."""
         questions = self.role_configs[role_type]["questions"]
-        session = ApplicationSession(user.id, role_type, questions)
+        session = ApplicationSession(user.id, role_type, questions, guild_id)
+
+        # Store session
+        self.active_sessions[user.id] = session
 
         try:
             embed = discord.Embed(
@@ -109,14 +159,202 @@ class Applications(commands.Cog):
             )
 
             await user.send(embed=embed)
-            # Store session for handling responses
-            # This would require implementing a message listener for DM responses
 
         except (discord.Forbidden, discord.HTTPException) as e:
             logger.warning(
                 f"Failed to start application questions for user {user.id}: {e}"
             )
+            # Clean up session if DM fails
+            if user.id in self.active_sessions:
+                del self.active_sessions[user.id]
             raise
+
+    async def _process_dm_response(self, message: discord.Message):
+        """Process a DM response."""
+        user_id = message.author.id
+
+        if user_id not in self.active_sessions:
+            return
+
+        session = self.active_sessions[user_id]
+        content = message.content.strip()
+
+        # Check for cancellation
+        if content.lower() == "cancel":
+            await self._cancel_application(message.author, session)
+            return
+
+        # Add the answer
+        session.add_answer(content)
+
+        # Check if there are more questions
+        if not session.is_finished():
+            # Send next question
+            next_question = session.get_current_question()
+            question_num = session.current_question + 1
+            total_questions = len(session.questions)
+
+            embed = discord.Embed(
+                title=f"{self.role_configs[session.role_type]['name']} Application",
+                description=f"Question {question_num} of {total_questions}:\n\n{next_question}",
+                color=discord.Color.blue(),
+            )
+            embed.set_footer(
+                text="Reply with your answer. Type 'cancel' to cancel the application."
+            )
+
+            await message.author.send(embed=embed)
+        else:
+            # Application completed
+            await self._complete_application(message.author, session)
+
+    async def _cancel_application(
+        self, user: discord.User, session: ApplicationSession
+    ):
+        """Cancel an application."""
+        try:
+            # Update database
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "UPDATE applications SET status = 'cancelled' WHERE user_id = ? AND status = 'pending'",
+                    (user.id,),
+                )
+                await db.commit()
+
+            # Clean up
+            if user.id in self.active_sessions:
+                del self.active_sessions[user.id]
+            if user.id in self.pending_applications_users:
+                self.pending_applications_users.remove(user.id)
+
+            embed = discord.Embed(
+                title="Application Cancelled",
+                description="Your application has been cancelled.",
+                color=discord.Color.red(),
+            )
+            await user.send(embed=embed)
+
+            logger.info(f"Application cancelled for user {user.id}")
+
+        except Exception as e:
+            logger.error(f"Error cancelling application for user {user.id}: {e}")
+
+    async def _complete_application(
+        self, user: discord.User, session: ApplicationSession
+    ):
+        """Complete an application and send to review channel."""
+        try:
+            # Update database
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "UPDATE applications SET answers = ?, status = 'completed' WHERE user_id = ? AND status = 'pending'",
+                    (json.dumps(session.answers), user.id),
+                )
+                await db.commit()
+
+            # Clean up
+            if user.id in self.active_sessions:
+                del self.active_sessions[user.id]
+            if user.id in self.pending_applications_users:
+                self.pending_applications_users.remove(user.id)
+
+            # Send confirmation message to user
+            embed = discord.Embed(
+                title="Application Submitted",
+                description=f"Thank you for submitting your application for {self.role_configs[session.role_type]['name']}. Your application has been submitted and is being reviewed by our team.",
+                color=discord.Color.green(),
+            )
+            await user.send(embed=embed)
+
+            # Send to review channel
+            await self._send_to_review_channel(user, session)
+
+            logger.info(
+                f"Application completed for user {user.id}, role: {session.role_type}"
+            )
+
+        except Exception as e:
+            logger.error(f"Error completing application for user {user.id}: {e}")
+
+    async def _send_to_review_channel(
+        self, user: discord.User, session: ApplicationSession
+    ):
+        """Send an application to the review channel."""
+        try:
+            channel = await self._get_application_channel(session.guild_id)
+            if not channel:
+                logger.warning(
+                    f"No application channel found for guild {session.guild_id}"
+                )
+                return
+
+            # Create review embed
+            embed = discord.Embed(
+                title=f"New {self.role_configs[session.role_type]['name']} Application",
+                color=discord.Color.orange(),
+            )
+            embed.add_field(name="User", value=f"{user.mention} ({user})", inline=False)
+            embed.add_field(name="User ID", value=str(user.id), inline=True)
+            embed.add_field(
+                name="Role Type",
+                value=self.role_configs[session.role_type]["name"],
+                inline=True,
+            )
+            embed.add_field(
+                name="Submitted",
+                value=discord.utils.format_dt(datetime.now(timezone.utc)),
+                inline=True,
+            )
+
+            # Add questions and answers
+            for i, question in enumerate(session.questions, 1):
+                answer_key = f"question_{i}"
+                answer = session.answers.get(answer_key, "No answer provided")
+                embed.add_field(name=f"Q{i}: {question}", value=answer, inline=False)
+
+            embed.set_thumbnail(url=user.display_avatar.url)
+            embed.set_footer(text=f"Application ID: {user.id}")
+
+            # Get guild and ping roles
+            guild = self.bot.get_guild(session.guild_id)
+            ping_roles = []
+
+            if guild:
+                # Look for moderator/admin roles to ping
+                ping_roles.extend(
+                    role.mention
+                    for role in guild.roles
+                    if any(
+                        keyword in role.name.lower()
+                        for keyword in ["moderator", "admin", "staff", "mod"]
+                    )
+                )
+            ping_text = " ".join(ping_roles) if ping_roles else ""
+            content = (
+                f"{ping_text}\n**New application submitted for review!**"
+                if ping_text
+                else "**New application submitted for review!**"
+            )
+
+            await channel.send(content=content, embed=embed)
+
+        except Exception as e:
+            logger.error(f"Error sending application to review channel: {e}")
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        """Handle DM responses."""
+        # Ignore bot messages
+        if message.author.bot:
+            return
+
+        # Only process DMs
+        if not isinstance(message.channel, discord.DMChannel):
+            return
+
+        # Check if user has active session
+        if message.author.id in self.active_sessions:
+            await self._process_dm_response(message)
 
     async def cog_load(self):
         # Populate pending applications from database
@@ -135,6 +373,39 @@ class Applications(commands.Cog):
 
     async def cog_unload(self):
         self.cleanup_expired_applications.cancel()
+
+    @commands.command(name="applications_setup")
+    @commands.has_permissions(manage_guild=True)
+    async def setup_applications_channel(
+        self, ctx, channel: discord.TextChannel = None
+    ):
+        """Set up the channel where completed applications will be sent."""
+        if channel is None:
+            channel = ctx.channel
+
+        try:
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "INSERT OR REPLACE INTO application_channels (guild_id, channel_id) VALUES (?, ?)",
+                    (ctx.guild.id, channel.id),
+                )
+                await db.commit()
+
+            embed = discord.Embed(
+                title="Applications Channel Set",
+                description=f"Completed applications will now be sent to {channel.mention}.",
+                color=discord.Color.green(),
+            )
+            await ctx.send(embed=embed)
+            logger.info(
+                f"Applications channel set to {channel.id} for guild {ctx.guild.id}"
+            )
+
+        except Exception as e:
+            logger.error(f"Error setting up applications channel: {e}")
+            await ctx.send(
+                "An error occurred while setting up the applications channel."
+            )
 
     @app_commands.command(
         name="apply", description="Start the application for advertising access roles."
@@ -218,7 +489,7 @@ class Applications(commands.Cog):
 
             # Send DM with application questions
             try:
-                await self._start_application_questions(interaction.user, role_type)
+                await self._start_application_questions(interaction.user, role_type, interaction.guild_id)
             except (discord.Forbidden, discord.HTTPException):
                 await interaction.followup.send(
                     "Couldn't send you a DM. Please check your privacy settings. Your application is pending.",

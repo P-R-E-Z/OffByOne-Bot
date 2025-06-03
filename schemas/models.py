@@ -58,3 +58,10 @@ CREATE TABLE IF NOT EXISTS server_configs (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
+
+CREATE_APPLICATION_CHANNELS_TABLE = """
+CREATE TABLE IF NOT EXISTS application_channels (
+    guild_id INTEGER PRIMARY KEY,
+    channel_id INTEGER NOT NULL
+);
+"""
