@@ -168,7 +168,7 @@ class DatabaseManager:
 
     @staticmethod
     async def batch_application_operations(
-        user_id: int, guild_id: int, application_id: int, role_type: str, status: str
+        user_id: int, application_id: int, role_type: str, status: str
     ):
         """Batch multiple database operations for application processing."""
         async with aiosqlite.connect(DB_PATH) as db:
@@ -328,7 +328,8 @@ class Applications(commands.Cog):
         """Validate that the role_type is one of the allowed values."""
         return role_type in self.get_role_configs()
 
-    async def _check_rate_limit(self, user_id: int) -> bool:
+    @staticmethod
+    async def _check_rate_limit(user_id: int) -> bool:
         """Check if user is rate limited."""
         await DatabaseManager.cleanup_old_rate_limits()
         attempts = await DatabaseManager.get_rate_limit_attempts(user_id)
@@ -476,7 +477,7 @@ class Applications(commands.Cog):
             total_questions = len(session.questions)
 
             embed = discord.Embed(
-                title=f"{self.get_role_configs[session.role_type]['name']} Application",
+                title=f"{self.get_role_configs()[session.role_type]['name']} Application",
                 description=f"Question {question_num} of {total_questions}:\n\n{next_question}",
                 color=discord.Color.blue(),
             )
@@ -498,11 +499,14 @@ class Applications(commands.Cog):
             async with aiosqlite.connect(DB_PATH) as db:
                 await db.execute(
                     "UPDATE applications SET status = 'cancelled' WHERE user_id = ? AND status = 'pending'",
-                    (user.id,),
+                    (user.id, session.guild_id),
                 )
                 await db.commit()
 
-            # Clean up
+            # Clean up session from database
+            await session.delete_from_database()
+
+            # Clean up in-memory data
             if user.id in self.active_sessions:
                 del self.active_sessions[user.id]
             if user.id in self.pending_applications_users:
@@ -542,7 +546,7 @@ class Applications(commands.Cog):
             # Send confirmation message to user
             embed = discord.Embed(
                 title="Application Submitted",
-                description=f"Thank you for submitting your application for {self.get_role_configs[session.role_type]['name']}. Your application has been submitted and is being reviewed by our team.",
+                description=f"Thank you for submitting your application for {self.get_role_configs()[session.role_type]['name']}. Your application has been submitted and is being reviewed by our team.",
                 color=discord.Color.green(),
             )
             await user.send(embed=embed)
@@ -571,14 +575,14 @@ class Applications(commands.Cog):
 
             # Create review embed
             embed = discord.Embed(
-                title=f"New {self.get_role_configs[session.role_type]['name']} Application",
+                title=f"New {self.get_role_configs()[session.role_type]['name']} Application",
                 color=discord.Color.orange(),
             )
             embed.add_field(name="User", value=f"{user.mention} ({user})", inline=False)
             embed.add_field(name="User ID", value=str(user.id), inline=True)
             embed.add_field(
                 name="Role Type",
-                value=self.get_role_configs[session.role_type]["name"],
+                value=self.get_role_configs()[session.role_type]["name"],
                 inline=True,
             )
             embed.add_field(
@@ -800,8 +804,8 @@ class Applications(commands.Cog):
                 f"Application created successfully - User: {user_id}, Role: {role_type}"
             )
 
-            role_display_name = self.get_role_configs(role_type, {}).get(
-                "name", role_type
+            role_display_name = (
+                self.get_role_configs().get(role_type, {}).get("name", role_type)
             )
             await interaction.response.send_message(
                 f"Thanks for applying for {role_display_name}! You will receive a DM from the Bot with your application details shortly.",
@@ -908,7 +912,7 @@ class Applications(commands.Cog):
                 )
                 await db.commit()
 
-            role_display_name = self.get_role_configs[role_type]["name"]
+            role_display_name = self.get_role_configs()[role_type]["name"]
             embed = discord.Embed(
                 title="Role Mapping Set",
                 description=f"{role_display_name} applications will now assign the {role.mention} role.",
@@ -984,7 +988,9 @@ class Applications(commands.Cog):
             if user.id in self.pending_applications_users:
                 self.pending_applications_users.remove(user.id)
 
-            role_display_name = self.get_role_configs[application["role_type"]]["name"]
+            role_display_name = self.get_role_configs()[application["role_type"]][
+                "name"
+            ]
 
             # Send DM to user
             try:
@@ -1069,7 +1075,9 @@ class Applications(commands.Cog):
             if user.id in self.pending_applications_users:
                 self.pending_applications_users.remove(user.id)
 
-            role_display_name = self.get_role_configs[application["role_type"]]["name"]
+            role_display_name = self.get_role_configs()[application["role_type"]][
+                "name"
+            ]
 
             # Send DM to user
             try:
