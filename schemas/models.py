@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS role_mappings (
     PRIMARY KEY (guild_id, role_type)
 );
 """
-CREAT_SESSIONS_TABLE = """
+CREATE_SESSIONS_TABLE = """
 CREATE TABLE IF NOT EXISTS application_sessions (
     user_id INTEGER PRIMARY KEY,
     guild_id INTEGER NOT NULL,

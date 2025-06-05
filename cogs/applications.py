@@ -666,7 +666,7 @@ class Applications(commands.Cog):
         try:
             async with aiosqlite.connect(DB_PATH) as db:
                 async with db.execute(
-                    "SELECT user_id FROM applications_sessions"
+                    "SELECT user_id FROM application_sessions"
                 ) as cursor:
                     async for row in cursor:
                         user_id = row[0]
@@ -674,18 +674,21 @@ class Applications(commands.Cog):
                         if session:
                             self.active_sessions[user_id] = session
         except Exception as e:
-            logger.error(f"Error loading sessions for user {user_id}: {e}")
+            logger.error(f"Error loading sessions from database: {e}")
 
         # Populate pending applications from database
-        async with aiosqlite.connect(DB_PATH) as db:
-            async with db.execute(
-                "SELECT user_id FROM applications WHERE status = 'pending'"
-            ) as cursor:
-                async for row in cursor:
-                    self.pending_applications_users.add(row[0])
-        logger.info(
-            f"Loaded {len(self.pending_applications_users)} pending application for user {self.bot.user.id}"
-        )
+        try:
+            async with aiosqlite.connect(DB_PATH) as db:
+                async with db.execute(
+                    "SELECT user_id FROM applications WHERE status = 'pending'"
+                ) as cursor:
+                    async for row in cursor:
+                        self.pending_applications_users.add(row[0])
+            logger.info(
+                f"Loaded {len(self.pending_applications_users)} pending applications"
+            )
+        except Exception as e:
+            logger.error(f"Error loading pending applications from database: {e}")
 
         # Start the cleanup task after everything is loaded
         self.cleanup_expired_applications.start()

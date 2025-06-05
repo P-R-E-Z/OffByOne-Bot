@@ -15,5 +15,7 @@ async def init_db():
         await db.execute(models.CREATE_SERVER_CONFIGS_TABLE)
         await db.execute(models.CREATE_APPLICATION_CHANNELS_TABLE)
         await db.execute(models.CREATE_ROLE_MAPPINGS_TABLE)
+        await db.execute(models.CREATE_RATE_LIMIT_TABLE)
+        await db.execute(models.CREATE_SESSIONS_TABLE)
         await db.commit()
         logger.info("Database initialized.")
