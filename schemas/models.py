@@ -5,6 +5,7 @@ CREATE_APPLICATIONS_TABLE = """
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
+    guild_id INTEGER NOT NULL,
     role_type TEXT NOT NULL,
     answers TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
@@ -64,4 +65,33 @@ CREATE TABLE IF NOT EXISTS application_channels (
     guild_id INTEGER PRIMARY KEY,
     channel_id INTEGER NOT NULL
 );
+"""
+
+CREATE_ROLE_MAPPINGS_TABLE = """
+CREATE TABLE IF NOT EXISTS role_mappings (
+    guild_id INTEGER NOT NULL,
+    role_type TEXT NOT NULL,
+    role_id INTEGER NOT NULL,
+    PRIMARY KEY (guild_id, role_type)
+);
+"""
+CREAT_SESSIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS application_sessions (
+    user_id INTEGER PRIMARY KEY,
+    guild_id INTEGER NOT NULL,
+    role_type TEXT NOT NULL,
+    current_question INTEGER NOT NULL,
+    answers TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_cancelled BOOLEAN DEFAULT 0,
+    is_completed BOOLEAN DEFAULT 0
+)
+"""
+
+CREATE_RATE_LIMIT_TABLE = """
+CREATE TABLE IF NOT EXISTS application_rate_limit (
+    user_id INTEGER NOT NULL,
+    attempt_time TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, attempt_time)
+)
 """
